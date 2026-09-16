@@ -122,7 +122,6 @@ func handleOptions(options [][]byte, conn *Connection) error {
 				slog.Debug("Tsize option", "tsize", string(options[i+1]))
 				opts["tsize"] = strconv.FormatInt(conn.DataLen, 10)
 			case "blksize":
-				// FIX: blksize value is an ASCII string, use strconv.Atoi instead of binary.Uvarint
 				blockSizeStr := string(options[i+1])
 				slog.Debug("Block size option", "blockSize", blockSizeStr)
 				size, err := strconv.Atoi(blockSizeStr)
@@ -156,7 +155,6 @@ func handleOptions(options [][]byte, conn *Connection) error {
 		return err
 	}
 	if ackPacket.Opcode != OPCODE_ACK {
-		// FIX: return a real error instead of nil so handleRRQ aborts
 		slog.Error("Expected ACK packet", "receivedOpcode", ackPacket.Opcode)
 		return fmt.Errorf("expected ACK packet, received opcode %d", ackPacket.Opcode)
 	}
@@ -185,7 +183,6 @@ func sendData(data []byte, conn *Connection, blockNumber int) error {
 		return err
 	}
 	if ackPacket.Opcode != OPCODE_ACK {
-		// FIX: return a real error instead of nil so recursion stops
 		slog.Error("Expected ACK packet", "receivedOpcode", ackPacket.Opcode)
 		return fmt.Errorf("expected ACK packet, received opcode %d", ackPacket.Opcode)
 	}
@@ -195,8 +192,6 @@ func sendData(data []byte, conn *Connection, blockNumber int) error {
 		return nil
 	}
 
-	// FIX: TFTP block numbers are big-endian uint16, not varint
-	// binary.Uvarint would decode block 1 ([0x00, 0x01]) as 0, causing negative slice index
 	next := binary.BigEndian.Uint16(ackPacket.Payload[0:2])
 
 	return sendData(data, conn, int(next))
